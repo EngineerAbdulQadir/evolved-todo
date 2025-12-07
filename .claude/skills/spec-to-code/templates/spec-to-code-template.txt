@@ -1,0 +1,645 @@
+# Spec-to-Code Templates
+
+Templates for converting specifications into implementation artifacts.
+
+## Table of Contents
+
+1. [Test Template with AC References](#test-template-with-ac-references)
+2. [Model Implementation Template](#model-implementation-template)
+3. [Service Implementation Template](#service-implementation-template)
+4. [CLI Command Template](#cli-command-template)
+5. [Traceability Comment Templates](#traceability-comment-templates)
+6. [Implementation Checklist Template](#implementation-checklist-template)
+7. [Traceability Matrix Template](#traceability-matrix-template)
+
+---
+
+## Test Template with AC References
+
+### Unit Test Template (Model/Service)
+
+```python
+"""
+Unit tests for [Feature Name] (Spec: [feature-id]).
+
+Tests cover:
+- AC1-AC3: [Category description]
+- AC4-AC6: [Category description]
+"""
+import pytest
+from datetime import datetime
+from src.models.[module] import [Model]
+from src.services.[module] import [Service]
+from src.models.exceptions import ValidationError, [OtherError]
+
+
+# Fixtures
+@pytest.fixture
+def [fixture_name]():
+    """[Fixture description]."""
+    return [Model]([args])
+
+
+# Test Classes
+class Test[Feature][HappyPath]:
+    """Test [feature] happy path scenarios."""
+
+    def test_[scenario_description](self, [fixture]):  # AC1
+        """[User story / scenario description] (AC1)."""
+        # Arrange: Set up test data
+        [setup_code]
+
+        # Act: Execute the code being tested
+        result = [code_under_test]
+
+        # Assert: Verify expected behavior
+        assert result.[attribute] == [expected_value]
+        assert result.[other_attribute] is [expected]
+
+
+class Test[Feature][Validation]:
+    """Test [feature] validation logic."""
+
+    def test_[validation_rule]_fails(self):  # AC2
+        """[Validation rule description] (AC2)."""
+        with pytest.raises(ValidationError, match="[expected error message]"):
+            [Model]([invalid_args])
+
+    def test_[boundary_condition]_succeeds(self):  # AC2
+        """[Boundary condition description] (AC2)."""
+        # Test exactly at boundary
+        result = [Model]([boundary_args])
+        assert result.[attribute] == [expected]
+
+
+class Test[Feature][EdgeCases]:
+    """Test [feature] edge cases."""
+
+    def test_[edge_case_description](self):  # Edge case from spec
+        """[Edge case description]."""
+        # Arrange
+        [setup_edge_case]
+
+        # Act
+        result = [code_under_test]
+
+        # Assert
+        assert result.[condition]
+```
+
+### Integration Test Template (CLI)
+
+```python
+"""
+Integration tests for CLI [command] command (Spec: [feature-id]).
+
+Tests cover:
+- AC[N]: [CLI behavior description]
+"""
+from typer.testing import CliRunner
+from src.main import app
+
+runner = CliRunner()
+
+
+class Test[Command]Command:
+    """Test 'todo [command]' CLI command."""
+
+    def test_[command]_[happy_path_scenario](self):  # AC[N]
+        """[Scenario description] (AC[N])."""
+        # Arrange: Set up any prerequisite data
+        # ... create tasks if needed ...
+
+        # Act: Run CLI command
+        result = runner.invoke(app, ["[command]", "[args]", "--option", "value"])
+
+        # Assert: Verify output and exit code
+        assert result.exit_code == 0
+        assert "[expected_output]" in result.stdout
+        assert "[pattern]" in result.stdout.lower()
+
+    def test_[command]_[error_scenario](self):  # AC[N]
+        """[Error scenario description] (AC[N])."""
+        result = runner.invoke(app, ["[command]", "[invalid_args]"])
+
+        assert result.exit_code == 1
+        assert "error" in result.stdout.lower()
+        assert "[expected_error_message]" in result.stdout
+```
+
+---
+
+## Model Implementation Template
+
+```python
+"""
+[Model Name] model (Spec: [feature-id] section [section-num]).
+
+Implements:
+- AC[N]: [Description of what ACs this implements]
+"""
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Optional, [OtherTypes]
+from src.models.exceptions import ValidationError
+
+
+@dataclass
+class [ModelName]:
+    """
+    [Model description] (Spec: [feature-id] section [section-num]).
+
+    Implements:
+        - AC[N]: [Acceptance criterion description]
+        - AC[M]: [Another acceptance criterion]
+
+    Attributes:
+        [attribute]: [Description] (AC[N])
+        [other_attribute]: [Description] (AC[M])
+    """
+
+    # Required attributes
+    [required_field]: [Type]
+
+    # Optional attributes with defaults
+    [optional_field]: Optional[[Type]] = None
+    [default_field]: [Type] = [default_value]
+    [generated_field]: [Type] = field(default_factory=[factory_function])
+
+    def __post_init__(self) -> None:
+        """
+        Validate model fields on initialization.
+
+        Implements:
+            - AC[N]: [Validation rule]
+        """
+        self._validate_[field]()
+        self._validate_[other_field]()
+
+    def _validate_[field](self) -> None:
+        """
+        Validate [field]: [constraints] (Spec: [feature-id] AC[N]).
+
+        Raises:
+            ValidationError: If [condition]
+        """
+        # Check [condition]
+        if [invalid_condition]:
+            raise ValidationError("[Error message from spec]")
+
+        # Check [other_condition]
+        if [other_invalid_condition]:
+            raise ValidationError("[Other error message]")
+
+    def [business_method](self) -> [ReturnType]:
+        """
+        [Method description] (Spec: [feature-id] AC[N]).
+
+        Returns:
+            [Return value description]
+        """
+        return [implementation]
+```
+
+---
+
+## Service Implementation Template
+
+```python
+"""
+[Service Name] service (Spec: [feature-id] section [section-num]).
+
+Implements:
+- AC[N]-AC[M]: [Category of functionality]
+"""
+from typing import List, Optional, [OtherTypes]
+from src.models.[model] import [Model]
+from src.models.exceptions import [Exceptions]
+from src.services.[dependency] import [Dependency]
+
+
+class [ServiceName]:
+    """
+    Business logic for [feature] (Spec: [feature-id] section [section-num]).
+
+    Implements:
+        - AC[N]: [Description]
+        - AC[M]: [Description]
+    """
+
+    def __init__(self, [dependency]: [DependencyType]) -> None:
+        """
+        Initialize [service name].
+
+        Args:
+            [dependency]: [Dependency description]
+        """
+        self._[dependency] = [dependency]
+
+    def [method_name](
+        self,
+        [param]: [Type],
+        [optional_param]: Optional[[Type]] = None
+    ) -> [ReturnType]:
+        """
+        [Method description] (Spec: [feature-id] section [section-num]).
+
+        Implements:
+            - AC[N]: [Acceptance criterion]
+            - AC[M]: [Another criterion]
+
+        Args:
+            [param]: [Parameter description] (AC[N])
+            [optional_param]: [Optional parameter description] (AC[M])
+
+        Returns:
+            [Return value description]
+
+        Raises:
+            [Exception]: If [condition]
+        """
+        # AC[N]: [Implementation step description]
+        [step1_code]
+
+        # AC[M]: [Another step]
+        [step2_code]
+
+        # Validation or business logic
+        if [condition]:
+            raise [Exception]("[Error message]")
+
+        return [result]
+
+    def _[private_helper](self, [param]: [Type]) -> [ReturnType]:
+        """Private helper method for [purpose]."""
+        return [implementation]
+```
+
+---
+
+## CLI Command Template
+
+```python
+"""
+CLI [command] command (Spec: [feature-id] section [section-num]).
+
+Implements:
+- AC[N]: [CLI behavior description]
+"""
+import typer
+from typing import Optional
+from rich.console import Console
+from src.services.[service] import [service_instance]
+from src.models.exceptions import [Exceptions]
+
+app = typer.Typer()
+console = Console()
+
+
+@app.command("[command]")
+def [command_name](
+    [arg]: [Type] = typer.Argument(
+        ...,
+        help="[Argument description from spec]"
+    ),
+    [option]: Optional[[Type]] = typer.Option(
+        None,
+        "--[option]", "-[short]",
+        help="[Option description from spec]"
+    ),
+) -> None:
+    """
+    [Command description] (Spec: [feature-id] section [section-num]).
+
+    Implements AC[N]: [Acceptance criterion for CLI output/behavior].
+
+    Examples:
+        $ todo [command] [example_usage]
+        [Expected output]
+
+        $ todo [command] [other_usage] --[option] [value]
+        [Expected output]
+    """
+    try:
+        # AC[N]: [Business logic call]
+        result = [service_instance].[method]([arg], [option]=[option])
+
+        # AC[M]: [Display success message]
+        console.print(f"[green]✓[/green] [Success message template]")
+
+        # Additional output if needed
+        if [condition]:
+            console.print(f"  [Additional info]")
+
+    except [SpecificException] as e:
+        # AC[K]: [Error handling]
+        console.print(f"[red]Error:[/red] {e}")
+        raise typer.Exit(code=1)
+
+    except Exception as e:
+        # Unexpected errors
+        console.print(f"[red]Unexpected error:[/red] {e}")
+        raise typer.Exit(code=2)
+```
+
+---
+
+## Traceability Comment Templates
+
+### In Tests
+
+```python
+def test_[scenario]():  # AC[N]
+    """[Description of what is tested] (AC[N])."""
+    # or
+    """[Description] (Spec: [feature-id] section [section-num])."""
+```
+
+### In Code (Docstrings)
+
+```python
+def [function]():
+    """
+    [Function description] (Spec: [feature-id] section [section-num]).
+
+    Implements:
+        - AC[N]: [Acceptance criterion]
+        - AC[M]: [Another criterion]
+    """
+```
+
+### In Code (Inline Comments)
+
+```python
+# AC[N]: [Why this code exists / what spec requirement it fulfills]
+[code_line]
+```
+
+### Example Usage
+
+```python
+def add_task(title: str, description: Optional[str] = None) -> Task:
+    """
+    Create new task (Spec: 001-add-task section 3.1).
+
+    Implements:
+        - AC1: Create with title only
+        - AC2: Optional description
+        - AC5: Sequential ID generation
+    """
+    # AC5: Generate next sequential ID (Spec: 001-add-task section 3.1.2)
+    task_id = self._id_gen.next()
+
+    # AC1, AC2, AC3, AC4: Task validates itself in __post_init__
+    task = Task(id=task_id, title=title, description=description)
+
+    return task
+```
+
+---
+
+## Implementation Checklist Template
+
+```markdown
+# Implementation Checklist: [Feature Name]
+
+**Spec Reference:** [spec-id]
+**Phase:** [phase-number]
+**Priority:** [P0/P1/P2/P3]
+
+---
+
+## Acceptance Criteria
+
+- [ ] **AC1**: [Acceptance criterion description]
+  - Tests: `test_[scenario]()`
+  - Code: `[module].[function]`
+
+- [ ] **AC2**: [Acceptance criterion description]
+  - Tests: `test_[other_scenario]()`
+  - Code: `[module].[function]`
+
+[... repeat for all ACs ...]
+
+---
+
+## Technical Contracts
+
+### Models
+- [ ] `[ModelName]` - [Description]
+  - Fields: [field1, field2, ...]
+  - Validation: [validation rules]
+
+### Services
+- [ ] `[ServiceName].[method]()` - [Description]
+  - Signature: `def [method]([params]) -> [ReturnType]`
+  - Behavior: [Expected behavior]
+
+### CLI
+- [ ] `todo [command]` - [Description]
+  - Signature: `todo [command] <arg> [--option <value>]`
+  - Output: [Success message format]
+  - Errors: [Error message formats]
+
+---
+
+## Implementation Order
+
+### Phase 1: Utilities & Dependencies
+- [ ] T[N]: [Utility task]
+- [ ] T[M]: [Dependency task]
+
+### Phase 2: Models
+- [ ] T[X]: Write unit tests for [Model] validation (AC[N])
+- [ ] T[Y]: Implement [Model] with validation (AC[N])
+
+### Phase 3: Services
+- [ ] T[A]: Write unit tests for [Service].[method]() (AC[N])
+- [ ] T[B]: Implement [Service].[method]() (AC[N])
+
+### Phase 4: CLI
+- [ ] T[C]: Write integration tests for CLI [command] (AC[N])
+- [ ] T[D]: Implement CLI [command] command (AC[N])
+
+---
+
+## Quality Gates
+
+### Code Quality
+- [ ] Type check passes: `mypy --strict src/`
+- [ ] Linter passes: `ruff check src/ tests/`
+- [ ] Formatter passes: `ruff format --check src/ tests/`
+- [ ] All tests pass: `pytest`
+- [ ] Coverage >90%: `pytest --cov=src --cov-fail-under=90`
+
+### Test Quality
+- [ ] Every AC has at least one test
+- [ ] All edge cases from spec tested
+- [ ] All error scenarios tested
+- [ ] Integration tests for CLI commands
+- [ ] test-guardian agent invoked
+
+### Code Quality
+- [ ] All tests include spec references
+- [ ] All code includes spec references
+- [ ] Type annotations complete (type-enforcer invoked)
+- [ ] Docstrings complete (doc-curator invoked)
+- [ ] Security review (security-sentinel invoked)
+
+---
+
+## Traceability
+
+- [ ] All tests reference ACs in docstrings
+- [ ] All code references spec sections in docstrings
+- [ ] Inline comments explain "why" (spec requirement)
+- [ ] Traceability matrix created and accurate
+
+---
+
+## Verification Against Spec
+
+### Contracts Match
+- [ ] CLI signature matches spec exactly
+- [ ] Service signature matches spec exactly
+- [ ] Model fields match spec exactly
+- [ ] Validation rules match spec exactly
+
+### Error Handling
+- [ ] Error messages user-friendly (match spec examples)
+- [ ] Exit codes correct (0=success, 1=validation error, 2=unexpected)
+- [ ] All error scenarios from spec handled
+
+### Documentation
+- [ ] README updated with new feature
+- [ ] CHANGELOG entry added
+- [ ] CLI help text accurate
+- [ ] Spec traceability complete
+
+---
+
+## Completion Criteria
+
+Feature is complete when:
+- ✅ All acceptance criteria have passing tests
+- ✅ All quality gates pass
+- ✅ All traceability requirements met
+- ✅ All contracts match spec exactly
+- ✅ Code reviewed by subagents (test-guardian, type-enforcer, security-sentinel)
+- ✅ Documentation updated
+```
+
+---
+
+## Traceability Matrix Template
+
+```markdown
+# Traceability Matrix: [Feature Name]
+
+**Spec Reference:** [spec-id]
+**Date:** [YYYY-MM-DD]
+**Coverage:** [X/Y ACs] ([percentage]%)
+
+---
+
+| AC | Description | Tests | Code | Status |
+|----|-------------|-------|------|--------|
+| AC1 | [Brief description] | `test_scenario_1()` | `module.function:line` | ✅ |
+| AC2 | [Brief description] | `test_scenario_2()` | `module.function:line` | ✅ |
+| AC3 | [Brief description] | `test_validation_1()`, `test_validation_2()` | `model._validate:line` | ✅ |
+| AC4 | [Brief description] | ⚠️ No tests | ❌ Not implemented | ⚠️ |
+
+---
+
+## Coverage Summary
+
+- **Total ACs:** [Y]
+- **Tested:** [X] ([percentage]%)
+- **Implemented:** [Z] ([percentage]%)
+- **Verified:** [W] ([percentage]%)
+
+## Missing Coverage
+
+### Tests Needed
+- AC4: [Description]
+
+### Implementation Needed
+- AC4: [Description]
+
+---
+
+## Test-to-Code Mapping
+
+### Unit Tests
+
+**test_task_model.py**
+- `test_create_task_with_title_only()` → AC1 → `Task.__init__:45`
+- `test_title_validation()` → AC3 → `Task._validate_title:62`
+
+**test_task_service.py**
+- `test_add_task()` → AC1, AC2, AC5 → `TaskService.add:93`
+- `test_sequential_id_generation()` → AC5 → `TaskService.add:95`
+
+### Integration Tests
+
+**test_cli_add.py**
+- `test_add_command_success()` → AC8 → `commands.add_task:115`
+- `test_add_command_validation_error()` → AC3, AC4, AC8 → `commands.add_task:125`
+
+---
+
+## Code-to-AC Mapping
+
+**src/models/task.py**
+- Lines 45-60: Implements AC1, AC2, AC6, AC7
+- Lines 62-70: Implements AC3 (title validation)
+- Lines 72-78: Implements AC4 (description validation)
+
+**src/services/task_service.py**
+- Lines 93-110: Implements AC1, AC2, AC5 (task creation with ID generation)
+
+**src/cli/commands.py**
+- Lines 115-135: Implements AC8 (CLI success message)
+
+---
+
+## Verification Status
+
+- ✅ All ACs have tests
+- ✅ All ACs implemented
+- ✅ All tests passing
+- ✅ Traceability complete
+```
+
+---
+
+## Quick Reference: Template Selection Guide
+
+| Artifact | Template to Use | When to Use |
+|----------|----------------|-------------|
+| Unit tests for models | Test Template (Model/Service) | After reading spec, before implementing model |
+| Unit tests for services | Test Template (Model/Service) | After model exists, before implementing service |
+| Integration tests for CLI | Integration Test Template | After service exists, before implementing CLI |
+| Model implementation | Model Implementation Template | After unit tests written (TDD red phase) |
+| Service implementation | Service Implementation Template | After unit tests written (TDD red phase) |
+| CLI implementation | CLI Command Template | After integration tests written (TDD red phase) |
+| Planning implementation | Implementation Checklist | Before starting any coding |
+| Verifying coverage | Traceability Matrix | After implementation complete, before marking done |
+
+---
+
+## Template Variables Reference
+
+Common placeholders used in templates:
+
+- `[Feature]` / `[FeatureName]` - Name of feature (e.g., "AddTask")
+- `[feature-id]` - Spec ID (e.g., "001-add-task")
+- `[section-num]` - Spec section number (e.g., "3.1")
+- `[Model]` / `[ModelName]` - Model class name (e.g., "Task")
+- `[Service]` / `[ServiceName]` - Service class name (e.g., "TaskService")
+- `[command]` / `[command_name]` - CLI command name (e.g., "add")
+- `AC[N]` / `AC[M]` - Acceptance criterion number
+- `[Type]` - Python type annotation (e.g., "str", "int", "Optional[str]")
+- `T[N]` - Task number from tasks.md
+
+**Usage:** Replace all `[placeholders]` with actual values when using templates!

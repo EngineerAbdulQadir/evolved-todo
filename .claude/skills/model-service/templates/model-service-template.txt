@@ -1,0 +1,525 @@
+================================================================================
+DATACLASS MODEL TEMPLATE
+================================================================================
+
+"""
+[Module description]
+"""
+
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Optional, Set, List
+from src.models.exceptions import ValidationError
+from src.models.[dependency] import [DependencyClass]
+
+
+@dataclass
+class [ModelName]:
+    """[Brief description of what this model represents]."""
+
+    # Required fields (no defaults)
+    id: int
+    [field_name]: [field_type]
+
+    # Optional fields with defaults
+    [optional_field]: Optional[str] = None
+    is_[status]: bool = False
+    created_at: datetime = field(default_factory=datetime.now)
+
+    # Mutable defaults (MUST use field(default_factory=...))
+    tags: Set[str] = field(default_factory=set)
+    items: List[str] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        """Validate all fields after initialization."""
+        self._validate_[field_name]()
+        self._validate_[another_field]()
+
+    def _validate_[field_name](self) -> None:
+        """
+        Validate [field_name] field.
+
+        Raises:
+            ValidationError: If validation fails
+        """
+        if not self.[field_name] or not self.[field_name].strip():
+            raise ValidationError("[Field] cannot be empty")
+
+        if len(self.[field_name]) > [MAX_LENGTH]:
+            raise ValidationError(f"[Field] cannot exceed {[MAX_LENGTH]} characters")
+
+    def _validate_[another_field](self) -> None:
+        """Validate [another_field] constraints."""
+        if self.[another_field] and len(self.[another_field]) > [MAX]:
+            raise ValidationError("[Another field] too long")
+
+    @property
+    def [computed_property](self) -> bool:
+        """Computed property (not stored, calculated on access)."""
+        return [some_calculation]
+
+
+# VALIDATION PATTERNS:
+#
+# 1. Non-empty string:
+#    if not field or not field.strip():
+#        raise ValidationError("Field cannot be empty")
+#
+# 2. Max length:
+#    if len(field) > MAX_LENGTH:
+#        raise ValidationError(f"Field exceeds {MAX_LENGTH} characters")
+#
+# 3. Numeric range:
+#    if not MIN <= value <= MAX:
+#        raise ValidationError(f"Value must be between {MIN} and {MAX}")
+#
+# 4. Pattern matching:
+#    import re
+#    if not re.match(r'^[a-zA-Z0-9_-]+$', field):
+#        raise ValidationError("Invalid characters in field")
+#
+# 5. Cross-field validation:
+#    if self.start_date and self.end_date:
+#        if self.end_date < self.start_date:
+#            raise ValidationError("End date must be after start date")
+
+
+================================================================================
+SERVICE CLASS TEMPLATE
+================================================================================
+
+"""
+[Service description - business logic for [ModelName]]
+"""
+
+from typing import List, Optional, Set
+from src.models.[model_file] import [ModelName]
+from src.models.exceptions import [ModelName]NotFoundError, ValidationError
+from src.storage.in_memory_store import [ModelName]Store
+from src.lib.id_generator import IdGenerator
+
+
+class [ModelName]Service:
+    """
+    Business logic for [model_name] operations.
+
+    Responsibilities:
+    - Create, read, update, delete [model_plural]
+    - Enforce business rules
+    - Coordinate between storage and domain models
+    """
+
+    def __init__(
+        self,
+        store: [ModelName]Store,
+        id_gen: IdGenerator
+    ) -> None:
+        """
+        Initialize service with dependencies.
+
+        Args:
+            store: Storage implementation
+            id_gen: ID generator
+        """
+        self._store = store
+        self._id_gen = id_gen
+
+    def add(
+        self,
+        [required_field]: [Type],
+        [optional_field]: Optional[Type] = None,
+    ) -> [ModelName]:
+        """
+        Create a new [model_name].
+
+        Args:
+            [required_field]: [Description] (required)
+            [optional_field]: [Description] (optional)
+
+        Returns:
+            Created [ModelName] instance with generated ID
+
+        Raises:
+            ValidationError: If input validation fails
+        """
+        [model_var] = [ModelName](
+            id=self._id_gen.next(),
+            [required_field]=[required_field],
+            [optional_field]=[optional_field],
+        )
+
+        self._store.save([model_var])
+        return [model_var]
+
+    def get(self, [model_var]_id: int) -> [ModelName]:
+        """
+        Retrieve [model_name] by ID.
+
+        Args:
+            [model_var]_id: [ModelName] ID
+
+        Returns:
+            [ModelName] instance
+
+        Raises:
+            [ModelName]NotFoundError: If [model_name] doesn't exist
+        """
+        [model_var] = self._store.get([model_var]_id)
+        if not [model_var]:
+            raise [ModelName]NotFoundError(
+                f"[ModelName] #{[model_var]_id} not found"
+            )
+        return [model_var]
+
+    def all(self) -> List[[ModelName]]:
+        """
+        Get all [model_plural] sorted by ID.
+
+        Returns:
+            List of all [model_plural]
+        """
+        return sorted(self._store.all(), key=lambda x: x.id)
+
+    def update(
+        self,
+        [model_var]_id: int,
+        [field]: Optional[Type] = None,
+    ) -> [ModelName]:
+        """
+        Update [model_name] fields (partial update).
+
+        Args:
+            [model_var]_id: [ModelName] ID
+            [field]: New [field] (None = keep current)
+
+        Returns:
+            Updated [ModelName] instance
+
+        Raises:
+            [ModelName]NotFoundError: If [model_name] doesn't exist
+            ValidationError: If new values invalid
+        """
+        [model_var] = self.get([model_var]_id)
+
+        # Create updated instance (triggers validation)
+        updated = [ModelName](
+            id=[model_var].id,
+            [field]=[field] if [field] is not None else [model_var].[field],
+            created_at=[model_var].created_at,
+        )
+
+        self._store.save(updated)
+        return updated
+
+    def delete(self, [model_var]_id: int) -> None:
+        """
+        Delete [model_name] from storage.
+
+        Args:
+            [model_var]_id: [ModelName] ID
+
+        Raises:
+            [ModelName]NotFoundError: If [model_name] doesn't exist
+        """
+        [model_var] = self.get([model_var]_id)  # Verify exists
+        self._store.delete([model_var]_id)
+
+    # OPTIONAL: Additional finder methods
+
+    def find_by_[criteria](self, [param]: Type) -> List[[ModelName]]:
+        """Find [model_plural] matching [criteria]."""
+        all_items = self._store.all()
+        return [item for item in all_items if item.[field] == [param]]
+
+
+# SERVICE METHOD PATTERNS:
+#
+# 1. Command method (changes state):
+#    def complete_[model](self, [model]_id: int) -> [Model]:
+#        [model] = self.get([model]_id)
+#        [model].is_complete = True
+#        self._store.save([model])
+#        return [model]
+#
+# 2. Finder method (queries):
+#    def find_[criteria](self, value: Type) -> List[[Model]]:
+#        all_items = self._store.all()
+#        return [item for item in all_items if item.[field] == value]
+#
+# 3. Bulk operation:
+#    def bulk_delete(self, ids: List[int]) -> int:
+#        count = 0
+#        for id in ids:
+#            try:
+#                self.delete(id)
+#                count += 1
+#            except [Model]NotFoundError:
+#                pass
+#        return count
+
+
+================================================================================
+STORAGE (REPOSITORY) TEMPLATE
+================================================================================
+
+"""
+In-memory storage for [ModelName].
+"""
+
+from typing import Dict, List, Optional
+from src.models.[model_file] import [ModelName]
+
+
+class InMemory[ModelName]Store:
+    """
+    In-memory storage for [model_plural].
+
+    Provides CRUD operations with dict-based storage.
+    """
+
+    def __init__(self) -> None:
+        """Initialize empty storage."""
+        self._[model_plural]: Dict[int, [ModelName]] = {}
+
+    def save(self, [model_var]: [ModelName]) -> None:
+        """
+        Save or update [model_name].
+
+        Args:
+            [model_var]: [ModelName] instance to save
+        """
+        self._[model_plural][[model_var].id] = [model_var]
+
+    def get(self, [model_var]_id: int) -> Optional[[ModelName]]:
+        """
+        Get [model_name] by ID.
+
+        Args:
+            [model_var]_id: [ModelName] ID
+
+        Returns:
+            [ModelName] if found, None otherwise
+        """
+        return self._[model_plural].get([model_var]_id)
+
+    def all(self) -> List[[ModelName]]:
+        """
+        Get all [model_plural].
+
+        Returns:
+            List of all stored [model_plural]
+        """
+        return list(self._[model_plural].values())
+
+    def delete(self, [model_var]_id: int) -> None:
+        """
+        Delete [model_name].
+
+        Args:
+            [model_var]_id: [ModelName] ID to delete
+        """
+        self._[model_plural].pop([model_var]_id, None)
+
+    def clear(self) -> None:
+        """Clear all stored [model_plural]."""
+        self._[model_plural].clear()
+
+    def count(self) -> int:
+        """Get count of stored [model_plural]."""
+        return len(self._[model_plural])
+
+
+================================================================================
+EXCEPTION CLASSES TEMPLATE
+================================================================================
+
+"""
+Custom exceptions for [domain].
+"""
+
+
+class [Domain]Error(Exception):
+    """Base exception for all [domain] errors."""
+    pass
+
+
+class ValidationError([Domain]Error):
+    """Raised when input validation fails."""
+    pass
+
+
+class [Model]NotFoundError([Domain]Error):
+    """Raised when [model] ID doesn't exist."""
+    pass
+
+
+class [Model]AlreadyExistsError([Domain]Error):
+    """Raised when attempting to create duplicate [model]."""
+    pass
+
+
+class StorageError([Domain]Error):
+    """Raised on storage operation failures."""
+    pass
+
+
+================================================================================
+TEST TEMPLATE
+================================================================================
+
+"""
+Unit tests for [ModelName] model and [ModelName]Service.
+"""
+
+import pytest
+from src.models.[model_file] import [ModelName]
+from src.models.exceptions import ValidationError, [ModelName]NotFoundError
+from src.services.[service_file] import [ModelName]Service
+from src.storage.in_memory_store import InMemory[ModelName]Store
+from src.lib.id_generator import SequentialIdGenerator
+
+
+# MODEL TESTS
+
+class Test[ModelName]:
+    """Test [ModelName] model validation."""
+
+    def test_create_valid_[model_var](self) -> None:
+        """Create [model_name] with valid data."""
+        [model_var] = [ModelName](
+            id=1,
+            [required_field]="valid value"
+        )
+
+        assert [model_var].id == 1
+        assert [model_var].[required_field] == "valid value"
+
+    def test_[field]_cannot_be_empty(self) -> None:
+        """[Field] validation: cannot be empty."""
+        with pytest.raises(ValidationError, match="cannot be empty"):
+            [ModelName](id=1, [field]="")
+
+    def test_[field]_max_length(self) -> None:
+        """[Field] validation: max length."""
+        valid = [ModelName](id=1, [field]="x" * [MAX])
+        assert len(valid.[field]) == [MAX]
+
+        with pytest.raises(ValidationError, match="exceed"):
+            [ModelName](id=1, [field]="x" * ([MAX] + 1))
+
+
+# SERVICE TESTS
+
+class Test[ModelName]Service:
+    """Test [ModelName]Service business logic."""
+
+    @pytest.fixture
+    def service(self) -> [ModelName]Service:
+        """Create service with dependencies."""
+        store = InMemory[ModelName]Store()
+        id_gen = SequentialIdGenerator()
+        return [ModelName]Service(store=store, id_gen=id_gen)
+
+    def test_add_[model_var](self, service: [ModelName]Service) -> None:
+        """Add [model_name] generates ID and stores it."""
+        [model_var] = service.add([required_field]="Test")
+
+        assert [model_var].id == 1
+        assert [model_var].[required_field] == "Test"
+
+    def test_get_existing_[model_var](self, service: [ModelName]Service) -> None:
+        """Get retrieves existing [model_name]."""
+        created = service.add([required_field]="Test")
+        retrieved = service.get(created.id)
+
+        assert retrieved.id == created.id
+
+    def test_get_nonexistent_[model_var]_raises(
+        self,
+        service: [ModelName]Service
+    ) -> None:
+        """Get non-existent [model_name] raises error."""
+        with pytest.raises([ModelName]NotFoundError):
+            service.get(999)
+
+    def test_update_[model_var](self, service: [ModelName]Service) -> None:
+        """Update modifies [model_name] fields."""
+        [model_var] = service.add([required_field]="Original")
+        updated = service.update([model_var].id, [field]="Updated")
+
+        assert updated.[field] == "Updated"
+        assert updated.id == [model_var].id
+
+    def test_delete_[model_var](self, service: [ModelName]Service) -> None:
+        """Delete removes [model_name]."""
+        [model_var] = service.add([required_field]="Test")
+        service.delete([model_var].id)
+
+        with pytest.raises([ModelName]NotFoundError):
+            service.get([model_var].id)
+
+    def test_all_returns_sorted(self, service: [ModelName]Service) -> None:
+        """All returns [model_plural] sorted by ID."""
+        service.add([required_field]="First")
+        service.add([required_field]="Second")
+
+        all_items = service.all()
+
+        assert len(all_items) == 2
+        assert all_items[0].id == 1
+        assert all_items[1].id == 2
+
+
+================================================================================
+CHECKLIST FOR NEW MODEL & SERVICE
+================================================================================
+
+Model Implementation:
+[ ] Create src/models/[model_file].py
+[ ] Define dataclass with required fields
+[ ] Add optional fields with proper defaults
+[ ] Use field(default_factory=...) for mutable defaults
+[ ] Implement __post_init__ validation
+[ ] Add validation methods for each field
+[ ] Add computed properties if needed
+[ ] Write docstrings for class and methods
+
+Exception Classes:
+[ ] Add [Model]NotFoundError to src/models/exceptions.py
+[ ] Add any domain-specific exceptions
+
+Service Implementation:
+[ ] Create src/services/[service_file].py
+[ ] Implement constructor with DI
+[ ] Implement add() method
+[ ] Implement get() method
+[ ] Implement all() method
+[ ] Implement update() method
+[ ] Implement delete() method
+[ ] Add finder methods as needed
+[ ] Write comprehensive docstrings
+
+Storage Implementation:
+[ ] Create src/storage/in_memory_[model]_store.py
+[ ] Implement save() method
+[ ] Implement get() method
+[ ] Implement all() method
+[ ] Implement delete() method
+
+Testing:
+[ ] Create tests/unit/models/test_[model].py
+[ ] Test valid model creation
+[ ] Test all validation rules
+[ ] Test edge cases (boundaries, empty, null)
+[ ] Create tests/unit/services/test_[service].py
+[ ] Test all service methods
+[ ] Test error cases
+[ ] Achieve >90% coverage
+
+Quality Checks:
+[ ] Run: uv run mypy --strict src/
+[ ] Run: uv run ruff check src/ tests/
+[ ] Run: uv run pytest --cov=src -v
+[ ] All type hints added
+[ ] All docstrings complete
+[ ] No code duplication
