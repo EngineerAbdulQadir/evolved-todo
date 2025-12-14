@@ -1,0 +1,171 @@
+# CLI Command Template
+
+## Basic Command Structure
+
+```python
+import typer
+from typing import Optional
+from rich.console import Console
+
+app = typer.Typer()
+console = Console()
+
+@app.command("COMMAND_NAME")
+def command_function(
+    # REQUIRED ARGUMENT
+    arg_name: str = typer.Argument(..., help="Argument description"),
+
+    # OPTIONAL OPTIONS
+    option1: Optional[str] = typer.Option(
+        None,
+        "--option1", "-o",
+        help="Option description"
+    ),
+
+    force: bool = typer.Option(
+        False,
+        "--force", "-f",
+        help="Skip confirmations"
+    ),
+) -> None:
+    """
+    Command description shown in --help.
+
+    Examples:
+
+      Basic usage:
+      $ todo COMMAND_NAME <arg>
+
+      With options:
+      $ todo COMMAND_NAME <arg> --option1 value --force
+    """
+    try:
+        # 1. VALIDATE INPUTS
+        if not arg_name:
+            raise ValueError("Argument cannot be empty")
+
+        # 2. CALL SERVICE LAYER (no business logic here!)
+        result = service.operation(arg_name, option1)
+
+        # 3. FORMAT SUCCESS OUTPUT
+        console.print(f"[green][/green] Operation successful")
+        console.print(f"  Result: {result}")
+
+    except ValidationError as e:
+        # USER INPUT ERRORS
+        console.print(f"[red]Error:[/red] {e}")
+        console.print("[yellow]Hint:[/yellow] Helpful suggestion")
+        raise typer.Exit(code=1)
+
+    except NotFoundError as e:
+        # RESOURCE NOT FOUND
+        console.print(f"[red]Error:[/red] {e}")
+        console.print("[yellow]Hint:[/yellow] Use 'todo list' to see available items")
+        raise typer.Exit(code=1)
+
+    except Exception as e:
+        # UNEXPECTED ERRORS
+        console.print(f"[red]Unexpected error:[/red] {e}")
+        raise typer.Exit(code=2)
+```
+
+## Command with Confirmation Prompt
+
+```python
+@app.command("delete")
+def delete_item(
+    item_id: int = typer.Argument(...),
+    force: bool = typer.Option(False, "--force", "-f"),
+) -> None:
+    """Delete item with confirmation."""
+    try:
+        # Get item to show in confirmation
+        item = service.get(item_id)
+
+        # Confirm unless --force
+        if not force:
+            console.print(f"[yellow]Delete:[/yellow] {item.name}")
+            confirmed = typer.confirm("Are you sure?")
+            if not confirmed:
+                console.print("Cancelled")
+                raise typer.Abort()
+
+        # Perform deletion
+        service.delete(item_id)
+        console.print(f"[green][/green] Item #{item_id} deleted")
+
+    except NotFoundError:
+        console.print(f"[red]Error:[/red] Item #{item_id} not found")
+        raise typer.Exit(code=1)
+```
+
+## Command with Rich Table Output
+
+```python
+from rich.table import Table
+
+@app.command("list")
+def list_items() -> None:
+    """Display items in formatted table."""
+    items = service.all()
+
+    if not items:
+        console.print("[yellow]No items found.[/yellow]")
+        return
+
+    table = Table(title=f"Items ({len(items)} total)")
+    table.add_column("ID", style="cyan")
+    table.add_column("Name", style="bold")
+    table.add_column("Status")
+
+    for item in items:
+        status = "[green][/green]" if item.active else "[ ]"
+        table.add_row(str(item.id), item.name, status)
+
+    console.print(table)
+```
+
+## Integration Test Template
+
+```python
+# tests/integration/test_cli_COMMAND.py
+from typer.testing import CliRunner
+from src.main import app
+
+runner = CliRunner()
+
+def test_command_success():
+    """Test successful command execution."""
+    result = runner.invoke(app, ["COMMAND_NAME", "arg_value"])
+
+    assert result.exit_code == 0
+    assert "success" in result.stdout.lower()
+
+def test_command_with_options():
+    """Test command with options."""
+    result = runner.invoke(app, [
+        "COMMAND_NAME", "arg_value",
+        "--option1", "value1"
+    ])
+
+    assert result.exit_code == 0
+
+def test_command_validation_error():
+    """Test command with invalid input."""
+    result = runner.invoke(app, ["COMMAND_NAME", ""])
+
+    assert result.exit_code == 1
+    assert "error" in result.stdout.lower()
+```
+
+## Checklist for New Commands
+
+- [ ] Command name is clear and follows conventions
+- [ ] All parameters have type hints
+- [ ] Help text provided for all arguments/options
+- [ ] Docstring with examples
+- [ ] No business logic in CLI (delegate to services)
+- [ ] Rich formatting for output
+- [ ] Error handling with user-friendly messages
+- [ ] Integration test created
+- [ ] Exit codes: 0 (success), 1 (user error), 2 (system error)
