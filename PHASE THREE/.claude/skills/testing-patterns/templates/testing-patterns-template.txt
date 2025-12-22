@@ -1,0 +1,462 @@
+================================================================================
+UNIT TEST TEMPLATE (Models)
+================================================================================
+
+"""
+Unit tests for [ModelName] model.
+
+Tests cover:
+- Valid creation
+- Validation rules
+- Edge cases
+- Default values
+"""
+
+import pytest
+from src.models.[model_file] import [ModelName]
+from src.models.exceptions import ValidationError
+
+
+class Test[ModelName]Creation:
+    """Test [ModelName] initialization and defaults."""
+
+    def test_create_valid_[model_var](self) -> None:
+        """Create [model_var] with valid data."""
+        [model_var] = [ModelName](
+            id=1,
+            [required_field]="valid value"
+        )
+
+        assert [model_var].id == 1
+        assert [model_var].[required_field] == "valid value"
+        # Assert defaults
+        assert [model_var].[optional_field] is None
+        assert not [model_var].[boolean_field]
+
+
+class Test[ModelName][Field]Validation:
+    """Test [field] validation rules."""
+
+    def test_[field]_cannot_be_empty(self) -> None:
+        """[Field] validation: cannot be empty."""
+        with pytest.raises(ValidationError, match="cannot be empty"):
+            [ModelName](id=1, [field]="")
+
+    def test_[field]_whitespace_only_raises_error(self) -> None:
+        """[Field] validation: whitespace-only not allowed."""
+        with pytest.raises(ValidationError, match="cannot be empty"):
+            [ModelName](id=1, [field]="   ")
+
+    def test_[field]_exactly_max_length_succeeds(self) -> None:
+        """[Field] validation: exactly max length allowed."""
+        max_value = "x" * [MAX_LENGTH]
+        [model_var] = [ModelName](id=1, [field]=max_value)
+
+        assert len([model_var].[field]) == [MAX_LENGTH]
+
+    def test_[field]_exceeds_max_length_raises_error(self) -> None:
+        """[Field] validation: exceeds max length."""
+        too_long = "x" * ([MAX_LENGTH] + 1)
+
+        with pytest.raises(ValidationError, match="exceed.*characters"):
+            [ModelName](id=1, [field]=too_long)
+
+    @pytest.mark.parametrize("[field],should_pass", [
+        ("valid value", True),
+        ("x" * [MAX_LENGTH], True),  # Max length
+        ("x" * ([MAX_LENGTH] + 1), False),  # Over max
+        ("", False),  # Empty
+        ("   ", False),  # Whitespace
+    ])
+    def test_[field]_validation_parametrized(
+        self,
+        [field]: str,
+        should_pass: bool
+    ) -> None:
+        """Test various [field] inputs."""
+        if should_pass:
+            [model_var] = [ModelName](id=1, [field]=[field])
+            assert [model_var].[field] == [field]
+        else:
+            with pytest.raises(ValidationError):
+                [ModelName](id=1, [field]=[field])
+
+
+================================================================================
+UNIT TEST TEMPLATE (Services)
+================================================================================
+
+"""
+Unit tests for [ServiceClass].
+
+Tests cover:
+- CRUD operations
+- Business logic
+- Error handling
+- Edge cases
+"""
+
+import pytest
+from src.models.[model_file] import [ModelName]
+from src.models.exceptions import [ModelName]NotFoundError, ValidationError
+from src.services.[service_file] import [ServiceClass]
+from src.storage.in_memory_store import [StoreName]
+from src.lib.id_generator import SequentialIdGenerator
+
+
+# FIXTURES
+
+@pytest.fixture
+def [model_var]_store() -> [StoreName]:
+    """Create fresh in-memory store for each test."""
+    return [StoreName]()
+
+
+@pytest.fixture
+def id_gen() -> SequentialIdGenerator:
+    """Create ID generator starting at 1."""
+    return SequentialIdGenerator(start=1)
+
+
+@pytest.fixture
+def [service_var](
+    [model_var]_store: [StoreName],
+    id_gen: SequentialIdGenerator
+) -> [ServiceClass]:
+    """Create configured service."""
+    return [ServiceClass](store=[model_var]_store, id_gen=id_gen)
+
+
+# TEST CLASSES
+
+class Test[ServiceClass]Add:
+    """Test add() method."""
+
+    def test_add_[model_var]_success(self, [service_var]: [ServiceClass]) -> None:
+        """Add [model_var] with valid data succeeds."""
+        [model_var] = [service_var].add([required_field]="Test")
+
+        assert isinstance([model_var], [ModelName])
+        assert [model_var].id == 1
+        assert [model_var].[required_field] == "Test"
+
+    def test_add_multiple_[model_var]s_increments_id(
+        self,
+        [service_var]: [ServiceClass]
+    ) -> None:
+        """Adding multiple [model_var]s increments ID sequentially."""
+        [model_var]1 = [service_var].add([required_field]="First")
+        [model_var]2 = [service_var].add([required_field]="Second")
+
+        assert [model_var]1.id == 1
+        assert [model_var]2.id == 2
+
+    def test_add_[model_var]_validation_error(
+        self,
+        [service_var]: [ServiceClass]
+    ) -> None:
+        """Add with invalid data raises ValidationError."""
+        with pytest.raises(ValidationError):
+            [service_var].add([required_field]="")
+
+
+class Test[ServiceClass]Get:
+    """Test get() method."""
+
+    def test_get_existing_[model_var](self, [service_var]: [ServiceClass]) -> None:
+        """Get existing [model_var] by ID returns it."""
+        created = [service_var].add([required_field]="Test")
+        retrieved = [service_var].get(created.id)
+
+        assert retrieved.id == created.id
+        assert retrieved.[required_field] == created.[required_field]
+
+    def test_get_nonexistent_[model_var]_raises_error(
+        self,
+        [service_var]: [ServiceClass]
+    ) -> None:
+        """Get non-existent [model_var] raises [ModelName]NotFoundError."""
+        with pytest.raises([ModelName]NotFoundError, match="not found"):
+            [service_var].get(999)
+
+
+class Test[ServiceClass]All:
+    """Test all() method."""
+
+    def test_all_returns_empty_list_initially(
+        self,
+        [service_var]: [ServiceClass]
+    ) -> None:
+        """All() returns empty list when no [model_var]s exist."""
+        [model_var]s = [service_var].all()
+
+        assert [model_var]s == []
+
+    def test_all_returns_sorted_[model_var]s(
+        self,
+        [service_var]: [ServiceClass]
+    ) -> None:
+        """All() returns [model_var]s sorted by ID."""
+        [service_var].add([required_field]="First")
+        [service_var].add([required_field]="Second")
+        [service_var].add([required_field]="Third")
+
+        [model_var]s = [service_var].all()
+
+        assert len([model_var]s) == 3
+        assert [[model_var].id for [model_var] in [model_var]s] == [1, 2, 3]
+
+
+class Test[ServiceClass]Update:
+    """Test update() method."""
+
+    def test_update_[model_var]_[field](self, [service_var]: [ServiceClass]) -> None:
+        """Update changes [field] while preserving other fields."""
+        [model_var] = [service_var].add([required_field]="Original")
+
+        updated = [service_var].update([model_var].id, [required_field]="Updated")
+
+        assert updated.[required_field] == "Updated"
+        assert updated.id == [model_var].id
+
+    def test_update_nonexistent_[model_var]_raises_error(
+        self,
+        [service_var]: [ServiceClass]
+    ) -> None:
+        """Update non-existent [model_var] raises [ModelName]NotFoundError."""
+        with pytest.raises([ModelName]NotFoundError):
+            [service_var].update(999, [required_field]="New value")
+
+
+class Test[ServiceClass]Delete:
+    """Test delete() method."""
+
+    def test_delete_existing_[model_var](
+        self,
+        [service_var]: [ServiceClass]
+    ) -> None:
+        """Delete removes [model_var] from storage."""
+        [model_var] = [service_var].add([required_field]="To delete")
+
+        [service_var].delete([model_var].id)
+
+        with pytest.raises([ModelName]NotFoundError):
+            [service_var].get([model_var].id)
+
+    def test_delete_nonexistent_[model_var]_raises_error(
+        self,
+        [service_var]: [ServiceClass]
+    ) -> None:
+        """Delete non-existent [model_var] raises [ModelName]NotFoundError."""
+        with pytest.raises([ModelName]NotFoundError):
+            [service_var].delete(999)
+
+
+================================================================================
+INTEGRATION TEST TEMPLATE (CLI Commands)
+================================================================================
+
+"""
+Integration tests for CLI commands.
+
+Tests full command flow from user input to output.
+"""
+
+import pytest
+from typer.testing import CliRunner
+from src.main import app
+
+runner = CliRunner()
+
+
+class Test[CommandName]Command:
+    """Test '[command]' CLI command."""
+
+    def test_[command]_success(self) -> None:
+        """[Command] with valid input succeeds."""
+        result = runner.invoke(app, ["[command]", "valid argument"])
+
+        assert result.exit_code == 0
+        assert "success" in result.stdout.lower()
+        assert "valid argument" in result.stdout
+
+    def test_[command]_with_options(self) -> None:
+        """[Command] with options succeeds."""
+        result = runner.invoke(app, [
+            "[command]",
+            "argument",
+            "--option", "value",
+            "--flag"
+        ])
+
+        assert result.exit_code == 0
+
+    def test_[command]_invalid_input_fails(self) -> None:
+        """[Command] with invalid input returns error code."""
+        result = runner.invoke(app, ["[command]", ""])
+
+        assert result.exit_code == 1
+        assert "error" in result.stdout.lower()
+
+    def test_[command]_nonexistent_resource_fails(self) -> None:
+        """[Command] with non-existent resource fails."""
+        result = runner.invoke(app, ["[command]", "999"])
+
+        assert result.exit_code == 1
+        assert "not found" in result.stdout.lower()
+
+    def test_[command]_shows_help(self) -> None:
+        """[Command] with --help shows usage information."""
+        result = runner.invoke(app, ["[command]", "--help"])
+
+        assert result.exit_code == 0
+        assert "Usage" in result.stdout
+
+
+================================================================================
+CONFTEST.PY TEMPLATE (Shared Fixtures)
+================================================================================
+
+"""
+Shared test fixtures for all tests.
+
+Place this file in tests/conftest.py to make fixtures available globally.
+"""
+
+import pytest
+from typing import Callable
+from src.models.[model_file] import [ModelName]
+from src.services.[service_file] import [ServiceClass]
+from src.storage.in_memory_store import [StoreName]
+from src.lib.id_generator import SequentialIdGenerator
+
+
+@pytest.fixture
+def [model_var]_store() -> [StoreName]:
+    """Fresh in-memory store for each test."""
+    return [StoreName]()
+
+
+@pytest.fixture
+def id_gen() -> SequentialIdGenerator:
+    """ID generator starting at 1."""
+    return SequentialIdGenerator(start=1)
+
+
+@pytest.fixture
+def [service_var](
+    [model_var]_store: [StoreName],
+    id_gen: SequentialIdGenerator
+) -> [ServiceClass]:
+    """Configured service with dependencies."""
+    return [ServiceClass](store=[model_var]_store, id_gen=id_gen)
+
+
+@pytest.fixture
+def make_[model_var]() -> Callable:
+    """Factory to create custom [model_var]s."""
+    def _make(
+        id: int = 1,
+        [required_field]: str = "Test",
+        **kwargs
+    ) -> [ModelName]:
+        return [ModelName](id=id, [required_field]=[required_field], **kwargs)
+    return _make
+
+
+@pytest.fixture
+def sample_[model_var]s(make_[model_var]) -> list[[ModelName]]:
+    """Create sample [model_var]s for testing."""
+    return [
+        make_[model_var](id=1, [required_field]="First"),
+        make_[model_var](id=2, [required_field]="Second"),
+        make_[model_var](id=3, [required_field]="Third"),
+    ]
+
+
+================================================================================
+PYTEST COMMANDS REFERENCE
+================================================================================
+
+# Run all tests
+uv run pytest
+
+# Run specific test file
+uv run pytest tests/unit/test_models.py
+
+# Run specific test class
+uv run pytest tests/unit/test_models.py::TestTaskValidation
+
+# Run specific test
+uv run pytest tests/unit/test_models.py::TestTaskValidation::test_empty_title
+
+# Run with verbose output
+uv run pytest -v
+
+# Run with print statements visible
+uv run pytest -s
+
+# Run tests matching pattern
+uv run pytest -k "validation"
+
+# Run with coverage
+uv run pytest --cov=src --cov-report=term-missing
+
+# Run with coverage threshold
+uv run pytest --cov=src --cov-fail-under=90
+
+# Run in parallel (with pytest-xdist)
+uv run pytest -n auto
+
+# Stop on first failure
+uv run pytest -x
+
+# Show local variables in tracebacks
+uv run pytest -l
+
+# Generate HTML coverage report
+uv run pytest --cov=src --cov-report=html
+# Then open: htmlcov/index.html
+
+
+================================================================================
+TEST CHECKLIST FOR NEW FEATURE
+================================================================================
+
+Model Tests:
+[ ] Test valid creation with required fields only
+[ ] Test valid creation with all fields
+[ ] Test each validation rule individually
+[ ] Test edge cases (min/max lengths, boundaries)
+[ ] Test parametrized inputs for comprehensive coverage
+[ ] Test default values are set correctly
+[ ] Achieve >90% coverage for model file
+
+Service Tests:
+[ ] Test add() method with valid and invalid data
+[ ] Test get() method for existing and non-existent items
+[ ] Test all() method returns sorted results
+[ ] Test update() method with partial and full updates
+[ ] Test delete() method removes items correctly
+[ ] Test all error paths (NotFoundError, ValidationError)
+[ ] Test business logic specific to this service
+[ ] Achieve >90% coverage for service file
+
+Integration Tests (CLI):
+[ ] Test command with valid input succeeds
+[ ] Test command with all options/flags
+[ ] Test command with invalid input fails gracefully
+[ ] Test command with non-existent resources
+[ ] Test command help text (--help)
+[ ] Test error messages are user-friendly
+[ ] Test exit codes (0 = success, 1 = error)
+
+Quality Checks:
+[ ] All tests pass: uv run pytest
+[ ] Coverage >90%: uv run pytest --cov=src --cov-fail-under=90
+[ ] Type checking passes: uv run mypy --strict src/
+[ ] Linting passes: uv run ruff check src/ tests/
+[ ] Tests follow AAA pattern (Arrange-Act-Assert)
+[ ] Test names describe what is being tested
+[ ] Fixtures used for reusable setup
+[ ] No shared mutable state between tests

@@ -1,0 +1,461 @@
+================================================================================
+QUALITY CHECK WORKFLOW TEMPLATE
+================================================================================
+
+# Before Committing Code
+
+## Step 1: Type Safety Check
+```bash
+uv run mypy --strict src/
+
+# Expected: Success: no issues found
+# If errors: Fix all type hints before proceeding
+```
+
+## Step 2: Linting Check
+```bash
+uv run ruff check src/ tests/
+
+# Expected: All checks passed!
+# If errors: Run auto-fix or fix manually
+```
+
+## Step 3: Format Check
+```bash
+uv run ruff format --check src/ tests/
+
+# Expected: Would reformat 0 files
+# If issues: Run ruff format src/ tests/
+```
+
+## Step 4: Test with Coverage
+```bash
+uv run pytest --cov=src --cov-fail-under=90 -v
+
+# Expected: All tests passed, coverage >90%
+# If failures: Fix tests and add missing coverage
+```
+
+## Step 5: Security Audit (Optional but Recommended)
+```bash
+uv run pip-audit
+
+# Expected: No known vulnerabilities found
+# If issues: Update vulnerable dependencies
+```
+
+
+================================================================================
+QUALITY CHECK SCRIPT TEMPLATES
+================================================================================
+
+# PowerShell Script (Windows)
+```powershell
+# scripts/quality-check.ps1
+
+Write-Host "= Running Quality Checks" -ForegroundColor Cyan
+Write-Host ""
+
+$ErrorCount = 0
+
+# Type checking
+Write-Host "1/4 Type checking (mypy)..." -ForegroundColor Yellow
+uv run mypy --strict src/
+if ($LASTEXITCODE -ne 0) {
+    $ErrorCount++
+    Write-Host "L Type check failed" -ForegroundColor Red
+} else {
+    Write-Host " Type check passed" -ForegroundColor Green
+}
+
+# Linting
+Write-Host "`n2/4 Linting (ruff)..." -ForegroundColor Yellow
+uv run ruff check src/ tests/
+if ($LASTEXITCODE -ne 0) {
+    $ErrorCount++
+    Write-Host "L Lint check failed" -ForegroundColor Red
+} else {
+    Write-Host " Lint check passed" -ForegroundColor Green
+}
+
+# Formatting
+Write-Host "`n3/4 Formatting (ruff)..." -ForegroundColor Yellow
+uv run ruff format --check src/ tests/
+if ($LASTEXITCODE -ne 0) {
+    $ErrorCount++
+    Write-Host "L Format check failed" -ForegroundColor Red
+} else {
+    Write-Host " Format check passed" -ForegroundColor Green
+}
+
+# Testing
+Write-Host "`n4/4 Testing (pytest)..." -ForegroundColor Yellow
+uv run pytest --cov=src --cov-fail-under=90
+if ($LASTEXITCODE -ne 0) {
+    $ErrorCount++
+    Write-Host "L Tests failed" -ForegroundColor Red
+} else {
+    Write-Host " Tests passed" -ForegroundColor Green
+}
+
+# Summary
+Write-Host ""
+Write-Host "=" * 60
+if ($ErrorCount -eq 0) {
+    Write-Host " All quality checks passed!" -ForegroundColor Green
+    exit 0
+} else {
+    Write-Host "L $ErrorCount check(s) failed" -ForegroundColor Red
+    exit 1
+}
+```
+
+# Bash Script (Linux/Mac)
+```bash
+#!/bin/bash
+# scripts/quality-check.sh
+
+set -e
+
+echo "= Running Quality Checks"
+echo ""
+
+ERROR_COUNT=0
+
+# Type checking
+echo "1/4 Type checking (mypy)..."
+if uv run mypy --strict src/; then
+    echo " Type check passed"
+else
+    echo "L Type check failed"
+    ((ERROR_COUNT++))
+fi
+
+# Linting
+echo ""
+echo "2/4 Linting (ruff)..."
+if uv run ruff check src/ tests/; then
+    echo " Lint check passed"
+else
+    echo "L Lint check failed"
+    ((ERROR_COUNT++))
+fi
+
+# Formatting
+echo ""
+echo "3/4 Formatting (ruff)..."
+if uv run ruff format --check src/ tests/; then
+    echo " Format check passed"
+else
+    echo "L Format check failed"
+    ((ERROR_COUNT++))
+fi
+
+# Testing
+echo ""
+echo "4/4 Testing (pytest)..."
+if uv run pytest --cov=src --cov-fail-under=90; then
+    echo " Tests passed"
+else
+    echo "L Tests failed"
+    ((ERROR_COUNT++))
+fi
+
+# Summary
+echo ""
+echo "============================================================"
+if [ $ERROR_COUNT -eq 0 ]; then
+    echo " All quality checks passed!"
+    exit 0
+else
+    echo "L $ERROR_COUNT check(s) failed"
+    exit 1
+fi
+```
+
+
+================================================================================
+PRE-COMMIT HOOK TEMPLATE
+================================================================================
+
+```bash
+#!/bin/bash
+# .git/hooks/pre-commit
+
+set -e
+
+echo "= Running pre-commit quality checks..."
+
+# Quick type check
+echo "’ Type checking..."
+uv run mypy --strict src/ || {
+    echo "L Type check failed. Fix errors before committing."
+    echo "Run: uv run mypy --strict src/"
+    exit 1
+}
+
+# Quick lint
+echo "’ Linting..."
+uv run ruff check src/ tests/ || {
+    echo "L Linting failed. Fix issues before committing."
+    echo "Run: uv run ruff check --fix src/ tests/"
+    exit 1
+}
+
+# Quick format check
+echo "’ Format checking..."
+uv run ruff format --check src/ tests/ || {
+    echo "L Format check failed. Fix formatting before committing."
+    echo "Run: uv run ruff format src/ tests/"
+    exit 1
+}
+
+# Quick tests (unit tests only for speed)
+echo "’ Running unit tests..."
+uv run pytest tests/unit/ -q || {
+    echo "L Tests failed. Fix tests before committing."
+    echo "Run: uv run pytest tests/unit/ -v"
+    exit 1
+}
+
+echo " Pre-commit checks passed!"
+```
+
+Make executable:
+```bash
+chmod +x .git/hooks/pre-commit
+```
+
+
+================================================================================
+CI/CD PIPELINE TEMPLATE (GitHub Actions)
+================================================================================
+
+```yaml
+# .github/workflows/quality.yml
+
+name: Quality Checks
+
+on:
+  push:
+    branches: [main, develop, feature/*]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  quality:
+    name: Quality Gates
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Type check with mypy
+        run: uv run mypy --strict src/
+
+      - name: Lint with ruff
+        run: uv run ruff check src/ tests/
+
+      - name: Format check with ruff
+        run: uv run ruff format --check src/ tests/
+
+      - name: Test with pytest
+        run: uv run pytest --cov=src --cov-fail-under=90 --cov-report=xml -v
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: true
+
+      - name: Security audit
+        run: uv run pip-audit
+        continue-on-error: true  # Don't fail build on vulnerabilities (just warn)
+
+      - name: Quality check summary
+        if: always()
+        run: |
+          echo "## Quality Check Results" >> $GITHUB_STEP_SUMMARY
+          echo " All quality gates passed!" >> $GITHUB_STEP_SUMMARY
+```
+
+
+================================================================================
+QUALITY CHECKLIST TEMPLATE
+================================================================================
+
+# Before Marking Task/Phase Complete
+
+## Code Quality
+- [ ] Type check passes: `uv run mypy --strict src/`
+- [ ] Linter passes: `uv run ruff check src/ tests/`
+- [ ] Formatter passes: `uv run ruff format --check src/ tests/`
+- [ ] No TODO/FIXME comments in production code
+- [ ] No commented-out code blocks
+- [ ] No print() statements for debugging
+
+## Testing
+- [ ] All tests pass: `uv run pytest`
+- [ ] Coverage >90%: `uv run pytest --cov=src --cov-fail-under=90`
+- [ ] New code has corresponding tests
+- [ ] Edge cases tested
+- [ ] Error paths tested
+- [ ] Integration tests pass (if applicable)
+
+## Documentation
+- [ ] All public functions have docstrings
+- [ ] Type hints on all functions
+- [ ] README updated (if applicable)
+- [ ] CHANGELOG updated (if applicable)
+- [ ] ADRs created for significant decisions
+
+## Security
+- [ ] No hardcoded secrets or credentials
+- [ ] Input validation implemented
+- [ ] Dependencies have no known vulnerabilities: `uv run pip-audit`
+- [ ] Error messages don't leak sensitive info
+
+## Performance
+- [ ] No obvious performance issues
+- [ ] Database queries optimized (if applicable)
+- [ ] No N+1 queries
+- [ ] Appropriate use of caching
+
+## Git
+- [ ] Commits follow conventional commits format
+- [ ] Branch name follows naming convention
+- [ ] No merge conflicts
+- [ ] All changes related to task/feature
+
+## Final Check
+- [ ] Run full quality check: `./scripts/quality-check.sh`
+- [ ] Review your own code
+- [ ] Test manually in development environment
+
+
+================================================================================
+TROUBLESHOOTING GUIDE
+================================================================================
+
+# Common Issues and Fixes
+
+## mypy: "Function is missing a return type annotation"
+Fix: Add return type to function
+```python
+# Before
+def get_task(task_id: int):
+    return task
+
+# After
+def get_task(task_id: int) -> Task:
+    return task
+```
+
+## mypy: "Argument 1 has incompatible type"
+Fix: Check type hints match actual usage
+```python
+# Before
+def process(data: str) -> None:
+    print(data)
+
+process(123)  # Error: int not str
+
+# After
+def process(data: str) -> None:
+    print(data)
+
+process(str(123))  # Convert to str
+```
+
+## ruff: "F401 imported but unused"
+Fix: Remove unused import or use it
+```python
+# Before
+from typing import List, Optional  # List unused
+
+# After
+from typing import Optional  # Removed List
+```
+
+## ruff: "E501 line too long"
+Fix: Break line into multiple lines
+```python
+# Before
+task = Task(id=1, title="Very long title", description="Very long description")
+
+# After
+task = Task(
+    id=1,
+    title="Very long title",
+    description="Very long description"
+)
+```
+
+## pytest: "Coverage below 90%"
+Fix: Add tests for uncovered lines
+```bash
+# Find uncovered lines
+uv run pytest --cov=src --cov-report=term-missing
+
+# Output shows:
+# src/models/task.py    45  2  96%  78-79
+
+# Add tests for lines 78-79
+```
+
+## pip-audit: "Vulnerability found"
+Fix: Update vulnerable package
+```bash
+# Check which package
+uv run pip-audit
+
+# Update specific package
+uv pip install --upgrade vulnerable-package
+
+# Re-run audit
+uv run pip-audit
+```
+
+
+================================================================================
+QUICK REFERENCE COMMANDS
+================================================================================
+
+# Run all quality checks
+./scripts/quality-check.sh              # Full check
+python scripts/helper.py full            # Using helper script
+
+# Run specific checks
+uv run mypy --strict src/               # Type check
+uv run ruff check src/ tests/           # Lint
+uv run ruff format --check src/         # Format check
+uv run pytest --cov=src --cov-fail-under=90  # Test
+
+# Auto-fix issues
+uv run ruff check --fix src/ tests/     # Auto-fix lint issues
+uv run ruff format src/ tests/          # Auto-format code
+
+# Coverage reports
+uv run pytest --cov=src --cov-report=html  # HTML report
+uv run pytest --cov=src --cov-report=term-missing  # Terminal with missing lines
+
+# Pre-commit
+git add .
+git commit -m "feat: add feature"       # Triggers pre-commit hook
+
+# CI/CD
+git push origin feature/my-feature      # Triggers GitHub Actions
