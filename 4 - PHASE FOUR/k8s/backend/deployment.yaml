@@ -1,0 +1,85 @@
+# [Task]: T042
+# [From]: specs/004-phase4-k8s-deployment/spec.md, AGENTS.md
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: evolved-todo-backend
+  labels:
+    app: evolved-todo
+    component: backend
+    version: 1.0.0
+spec:
+  replicas: 2  # Minimum 2 for high availability
+  selector:
+    matchLabels:
+      app: evolved-todo
+      component: backend
+  template:
+    metadata:
+      labels:
+        app: evolved-todo
+        component: backend
+        version: 1.0.0
+    spec:
+      containers:
+      - name: backend
+        image: evolved-todo-backend:1.0.0
+        imagePullPolicy: Never  # Use local image from Minikube
+        ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: database-secret
+              key: DATABASE_URL
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: openai-secret
+              key: OPENAI_API_KEY
+        - name: BETTER_AUTH_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: auth-secret
+              key: BETTER_AUTH_SECRET
+        - name: ENVIRONMENT
+          value: "production"
+        - name: DEBUG
+          value: "false"
+        - name: FRONTEND_URL
+          value: "http://127.0.0.1"  # Frontend LoadBalancer URL for CORS
+        resources:
+          requests:
+            cpu: 200m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /api/health
+            port: 8000
+          initialDelaySeconds: 0
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 12  # 60 seconds max startup time

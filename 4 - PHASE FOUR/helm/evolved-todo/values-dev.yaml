@@ -1,0 +1,49 @@
+# Development overrides for evolved-todo
+# Task: T073 - Development values file
+# Spec: specs/004-phase4-k8s-deployment/spec.md
+
+# Lower replica counts for dev
+replicaCount:
+  backend: 3
+  frontend: 3
+
+# Disable autoscaling in dev
+autoscaling:
+  backend:
+    enabled: false
+  frontend:
+    enabled: false
+
+# Use NodePort for easier local access
+service:
+  backend:
+    type: LoadBalancer  # Keep LoadBalancer for minikube tunnel
+    port: 8000
+  frontend:
+    type: LoadBalancer  # Keep LoadBalancer for minikube tunnel
+    port: 80
+    targetPort: 3000
+
+# Use Never pull policy for local images
+image:
+  backend:
+    pullPolicy: Never  # Use local Minikube images
+  frontend:
+    pullPolicy: Never  # Use local Minikube images
+
+# Lower resource requests for dev
+resources:
+  backend:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 300m
+      memory: 256Mi
+  frontend:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 150m
+      memory: 128Mi

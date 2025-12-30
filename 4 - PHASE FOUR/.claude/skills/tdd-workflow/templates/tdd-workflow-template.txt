@@ -1,0 +1,126 @@
+"""
+Test-First Template
+
+Use this template to start TDD cycle with a failing test.
+"""
+
+import pytest
+from src.models.task import Task  # Replace with your module
+from src.models.exceptions import ValidationError  # Replace with your exceptions
+
+
+class TestFeatureName:  # Replace with feature being tested
+    """Test suite for [Feature Name]."""
+
+    def test_happy_path_scenario(self) -> None:
+        """
+        Test successful operation with valid inputs.
+
+        TDD Step: RED - Write this test FIRST, watch it fail.
+        """
+        # Arrange: Set up test data
+        input_value = "valid input"
+
+        # Act: Call the code being tested
+        # result = function_to_test(input_value)  # This doesn't exist yet!
+
+        # Assert: Verify expected behavior
+        # assert result == "expected output"
+
+        # Temporarily fail to remind you to implement
+        pytest.fail("IMPLEMENT ME: Make this test pass in GREEN phase")
+
+    def test_edge_case_empty_input(self) -> None:
+        """
+        Test edge case: empty input.
+
+        TDD Step: RED - Write after first test passes.
+        """
+        # Arrange
+        input_value = ""
+
+        # Act & Assert: Expect specific exception
+        # with pytest.raises(ValidationError, match="cannot be empty"):
+        #     function_to_test(input_value)
+
+        pytest.fail("IMPLEMENT ME: Add validation for empty input")
+
+    def test_edge_case_max_length(self) -> None:
+        """
+        Test edge case: maximum allowed length.
+
+        TDD Step: RED - Drives boundary validation.
+        """
+        # Arrange: Input at exact boundary
+        max_length = 200
+        input_value = "x" * max_length
+
+        # Act
+        # result = function_to_test(input_value)
+
+        # Assert: Should succeed at boundary
+        # assert len(result) == max_length
+
+        pytest.fail("IMPLEMENT ME: Handle max length boundary")
+
+    def test_edge_case_exceeds_max_length(self) -> None:
+        """
+        Test edge case: exceeds maximum length.
+
+        TDD Step: RED - Drives upper bound validation.
+        """
+        # Arrange: Input exceeds boundary
+        input_value = "x" * 201
+
+        # Act & Assert
+        # with pytest.raises(ValidationError, match="exceeds.*length"):
+        #     function_to_test(input_value)
+
+        pytest.fail("IMPLEMENT ME: Validate max length")
+
+    @pytest.mark.parametrize("input_val,expected", [
+        ("input1", "output1"),
+        ("input2", "output2"),
+        ("input3", "output3"),
+    ])
+    def test_multiple_scenarios(
+        self,
+        input_val: str,
+        expected: str
+    ) -> None:
+        """
+        Test multiple input/output pairs.
+
+        TDD Step: RED - Use after basic implementation works.
+        """
+        # Act
+        # result = function_to_test(input_val)
+
+        # Assert
+        # assert result == expected
+
+        pytest.fail(f"IMPLEMENT ME: Handle scenario {input_val} -> {expected}")
+
+
+# TDD WORKFLOW REMINDERS:
+#
+# =4 RED PHASE:
+# 1. Write ONE failing test above
+# 2. Run: uv run pytest tests/unit/test_file.py::TestFeatureName::test_name -v
+# 3. Verify test FAILS (if it passes, something is wrong!)
+# 4. Commit: git commit -m "test: add failing test for [feature]"
+#
+# =â GREEN PHASE:
+# 1. Write MINIMAL code to make test pass
+# 2. Run: uv run pytest tests/unit/test_file.py::TestFeatureName::test_name -v
+# 3. Verify test PASSES
+# 4. Commit: git commit -m "feat: implement [feature]"
+#
+# =5 REFACTOR PHASE:
+# 1. Improve code quality (DRY, SOLID, clean code)
+# 2. Run: uv run mypy --strict src/
+# 3. Run: uv run ruff check --fix src/ tests/
+# 4. Run: uv run pytest (all tests still pass!)
+# 5. Commit: git commit -m "refactor: improve [aspect]"
+#
+# REPEAT for next test!

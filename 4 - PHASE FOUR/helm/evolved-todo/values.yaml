@@ -1,0 +1,137 @@
+# Default values for evolved-todo (Production)
+# Task: T072 - Production values file
+# Spec: specs/004-phase4-k8s-deployment/spec.md
+
+# Global settings
+nameOverride: ""
+fullnameOverride: ""
+
+# Image settings
+image:
+  backend:
+    repository: evolved-todo-backend
+    tag: "1.0.0"
+    pullPolicy: IfNotPresent
+  frontend:
+    repository: evolved-todo-frontend
+    tag: "1.0.0"
+    pullPolicy: IfNotPresent
+
+# Replica counts
+replicaCount:
+  backend: 2
+  frontend: 2
+
+# Resource limits and requests
+resources:
+  backend:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  frontend:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+# Autoscaling configuration
+autoscaling:
+  backend:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+  frontend:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 80
+
+# Service configuration
+service:
+  backend:
+    type: LoadBalancer  # ClusterIP for internal, LoadBalancer for external
+    port: 8000
+  frontend:
+    type: LoadBalancer
+    port: 80
+    targetPort: 3000
+
+# Health check probes
+probes:
+  backend:
+    liveness:
+      path: /api/health
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+    readiness:
+      path: /api/health
+      initialDelaySeconds: 10
+      periodSeconds: 5
+      timeoutSeconds: 3
+      failureThreshold: 3
+    startup:
+      path: /api/health
+      initialDelaySeconds: 0
+      periodSeconds: 5
+      timeoutSeconds: 3
+      failureThreshold: 12
+  frontend:
+    liveness:
+      path: /api/health
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+    readiness:
+      path: /api/health
+      initialDelaySeconds: 10
+      periodSeconds: 5
+      timeoutSeconds: 3
+      failureThreshold: 3
+    startup:
+      path: /api/health
+      initialDelaySeconds: 0
+      periodSeconds: 5
+      timeoutSeconds: 3
+      failureThreshold: 12
+
+# Environment variables
+env:
+  backend:
+    ENVIRONMENT: "production"
+    DEBUG: "false"
+    FRONTEND_URL: "http://127.0.0.1"
+  frontend:
+    NEXT_PUBLIC_BACKEND_URL: "http://127.0.0.1:8000"
+    BETTER_AUTH_URL: "http://127.0.0.1"
+
+# Secrets (must be set during install)
+secrets:
+  # These should be provided via --set or separate secrets file
+  DATABASE_URL: ""  # postgresql+asyncpg://...
+  OPENAI_API_KEY: ""  # sk-proj-...
+  BETTER_AUTH_SECRET: ""  # generated secret key
+
+# Security context
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+# Node selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity
+affinity: {}

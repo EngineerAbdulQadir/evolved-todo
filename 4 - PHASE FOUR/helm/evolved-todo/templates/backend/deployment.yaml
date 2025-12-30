@@ -1,0 +1,95 @@
+# Backend Deployment Template
+# Task: T075 - Backend Deployment with parameterized values
+# Spec: specs/004-phase4-k8s-deployment/spec.md
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "evolved-todo.fullname" . }}-backend
+  labels:
+    {{- include "evolved-todo.backend.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.backend.enabled }}
+  replicas: {{ .Values.replicaCount.backend }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "evolved-todo.backend.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "evolved-todo.backend.selectorLabels" . | nindent 8 }}
+    spec:
+      securityContext:
+        runAsNonRoot: {{ .Values.securityContext.runAsNonRoot }}
+        runAsUser: {{ .Values.securityContext.runAsUser }}
+        runAsGroup: {{ .Values.securityContext.runAsGroup }}
+        fsGroup: {{ .Values.securityContext.fsGroup }}
+      containers:
+      - name: backend
+        image: "{{ .Values.image.backend.repository }}:{{ .Values.image.backend.tag }}"
+        imagePullPolicy: {{ .Values.image.backend.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.service.backend.port }}
+          protocol: TCP
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "evolved-todo.fullname" . }}-secrets
+              key: DATABASE_URL
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "evolved-todo.fullname" . }}-secrets
+              key: OPENAI_API_KEY
+        - name: BETTER_AUTH_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "evolved-todo.fullname" . }}-secrets
+              key: BETTER_AUTH_SECRET
+        - name: ENVIRONMENT
+          value: {{ .Values.env.backend.ENVIRONMENT | quote }}
+        - name: DEBUG
+          value: {{ .Values.env.backend.DEBUG | quote }}
+        - name: FRONTEND_URL
+          value: {{ .Values.env.backend.FRONTEND_URL | quote }}
+        resources:
+          {{- toYaml .Values.resources.backend | nindent 10 }}
+        livenessProbe:
+          httpGet:
+            path: {{ .Values.probes.backend.liveness.path }}
+            port: {{ .Values.service.backend.port }}
+          initialDelaySeconds: {{ .Values.probes.backend.liveness.initialDelaySeconds }}
+          periodSeconds: {{ .Values.probes.backend.liveness.periodSeconds }}
+          timeoutSeconds: {{ .Values.probes.backend.liveness.timeoutSeconds }}
+          failureThreshold: {{ .Values.probes.backend.liveness.failureThreshold }}
+        readinessProbe:
+          httpGet:
+            path: {{ .Values.probes.backend.readiness.path }}
+            port: {{ .Values.service.backend.port }}
+          initialDelaySeconds: {{ .Values.probes.backend.readiness.initialDelaySeconds }}
+          periodSeconds: {{ .Values.probes.backend.readiness.periodSeconds }}
+          timeoutSeconds: {{ .Values.probes.backend.readiness.timeoutSeconds }}
+          failureThreshold: {{ .Values.probes.backend.readiness.failureThreshold }}
+        startupProbe:
+          httpGet:
+            path: {{ .Values.probes.backend.startup.path }}
+            port: {{ .Values.service.backend.port }}
+          initialDelaySeconds: {{ .Values.probes.backend.startup.initialDelaySeconds }}
+          periodSeconds: {{ .Values.probes.backend.startup.periodSeconds }}
+          timeoutSeconds: {{ .Values.probes.backend.startup.timeoutSeconds }}
+          failureThreshold: {{ .Values.probes.backend.startup.failureThreshold }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

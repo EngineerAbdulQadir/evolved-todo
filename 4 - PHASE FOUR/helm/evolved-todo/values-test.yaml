@@ -1,0 +1,8 @@
+# Test values for Helm dry-run validation
+# Task: T084 - Dry-run validation
+# Spec: specs/004-phase4-k8s-deployment/spec.md
+
+secrets:
+  DATABASE_URL: "postgresql+asyncpg://test:test@localhost:5432/testdb"
+  OPENAI_API_KEY: "sk-proj-test-key-placeholder"
+  BETTER_AUTH_SECRET: "test-secret-placeholder-32-chars"

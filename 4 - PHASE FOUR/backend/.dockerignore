@@ -1,0 +1,68 @@
+# Task: T001
+# Ref: ADR-001 - Containerization Strategy
+# Purpose: Optimize backend Docker image build by excluding unnecessary files
+
+# Python virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Python cache and compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Testing
+tests/
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+*.test.py
+
+# Environment and secrets
+.env*
+!.env.example
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# IDE and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Development tools
+.mypy_cache/
+.ruff_cache/
+.editorconfig
+
+# Documentation
+README.md
+docs/
+*.md
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Misc
+Thumbs.db
+.cache/
+temp/
+tmp/

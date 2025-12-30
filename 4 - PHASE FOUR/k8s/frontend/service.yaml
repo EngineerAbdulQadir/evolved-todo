@@ -1,0 +1,21 @@
+# [Task]: T046
+# [From]: specs/004-phase4-k8s-deployment/spec.md, AGENTS.md
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: evolved-todo-frontend
+  labels:
+    app: evolved-todo
+    component: frontend
+spec:
+  type: LoadBalancer  # External access (minikube tunnel provides LoadBalancer)
+  selector:
+    app: evolved-todo
+    component: frontend
+  ports:
+  - name: http
+    port: 80       # External port
+    targetPort: 3000  # Container port
+    protocol: TCP
+  sessionAffinity: None  # Stateless - any pod can handle any request

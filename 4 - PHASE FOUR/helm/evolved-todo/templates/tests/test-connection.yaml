@@ -1,0 +1,40 @@
+# Test Connection Template
+# Task: T082 - Helm test to verify connectivity
+# Spec: specs/004-phase4-k8s-deployment/spec.md
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "evolved-todo.fullname" . }}-test-connection"
+  labels:
+    {{- include "evolved-todo.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": hook-succeeded,hook-failed
+spec:
+  containers:
+  - name: wget
+    image: busybox:1.36
+    command: ['sh', '-c']
+    args:
+    - |
+      echo "Testing frontend connectivity..."
+      wget --spider --timeout=10 http://{{ include "evolved-todo.fullname" . }}-frontend:{{ .Values.service.frontend.port }}/api/health
+      if [ $? -eq 0 ]; then
+        echo "✅ Frontend health check passed"
+      else
+        echo "❌ Frontend health check failed"
+        exit 1
+      fi
+
+      echo "Testing backend connectivity..."
+      wget --spider --timeout=10 http://{{ include "evolved-todo.fullname" . }}-backend:{{ .Values.service.backend.port }}/api/health
+      if [ $? -eq 0 ]; then
+        echo "✅ Backend health check passed"
+      else
+        echo "❌ Backend health check failed"
+        exit 1
+      fi
+
+      echo "✅ All connectivity tests passed"
+  restartPolicy: Never

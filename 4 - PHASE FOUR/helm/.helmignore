@@ -1,0 +1,20 @@
+# Helm chart ignore patterns
+*.md
+*.txt
+.git/
+.gitignore
+.DS_Store
+Thumbs.db
+*.log
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+*.backup
+*.bak
+*.tmp
+test/
+tests/
+examples/
+docs/

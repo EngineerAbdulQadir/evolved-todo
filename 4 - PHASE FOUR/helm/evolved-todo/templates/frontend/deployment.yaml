@@ -1,0 +1,83 @@
+# Frontend Deployment Template
+# Task: T078 - Frontend Deployment with parameterized values
+# Spec: specs/004-phase4-k8s-deployment/spec.md
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "evolved-todo.fullname" . }}-frontend
+  labels:
+    {{- include "evolved-todo.frontend.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.frontend.enabled }}
+  replicas: {{ .Values.replicaCount.frontend }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "evolved-todo.frontend.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "evolved-todo.frontend.selectorLabels" . | nindent 8 }}
+    spec:
+      securityContext:
+        runAsNonRoot: {{ .Values.securityContext.runAsNonRoot }}
+        runAsUser: {{ .Values.securityContext.runAsUser }}
+        runAsGroup: {{ .Values.securityContext.runAsGroup }}
+        fsGroup: {{ .Values.securityContext.fsGroup }}
+      containers:
+      - name: frontend
+        image: "{{ .Values.image.frontend.repository }}:{{ .Values.image.frontend.tag }}"
+        imagePullPolicy: {{ .Values.image.frontend.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.service.frontend.targetPort }}
+          protocol: TCP
+        env:
+        - name: NEXT_PUBLIC_BACKEND_URL
+          value: {{ .Values.env.frontend.NEXT_PUBLIC_BACKEND_URL | quote }}
+        - name: BETTER_AUTH_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "evolved-todo.fullname" . }}-secrets
+              key: BETTER_AUTH_SECRET
+        - name: BETTER_AUTH_URL
+          value: {{ .Values.env.frontend.BETTER_AUTH_URL | quote }}
+        resources:
+          {{- toYaml .Values.resources.frontend | nindent 10 }}
+        livenessProbe:
+          httpGet:
+            path: {{ .Values.probes.frontend.liveness.path }}
+            port: {{ .Values.service.frontend.targetPort }}
+          initialDelaySeconds: {{ .Values.probes.frontend.liveness.initialDelaySeconds }}
+          periodSeconds: {{ .Values.probes.frontend.liveness.periodSeconds }}
+          timeoutSeconds: {{ .Values.probes.frontend.liveness.timeoutSeconds }}
+          failureThreshold: {{ .Values.probes.frontend.liveness.failureThreshold }}
+        readinessProbe:
+          httpGet:
+            path: {{ .Values.probes.frontend.readiness.path }}
+            port: {{ .Values.service.frontend.targetPort }}
+          initialDelaySeconds: {{ .Values.probes.frontend.readiness.initialDelaySeconds }}
+          periodSeconds: {{ .Values.probes.frontend.readiness.periodSeconds }}
+          timeoutSeconds: {{ .Values.probes.frontend.readiness.timeoutSeconds }}
+          failureThreshold: {{ .Values.probes.frontend.readiness.failureThreshold }}
+        startupProbe:
+          httpGet:
+            path: {{ .Values.probes.frontend.startup.path }}
+            port: {{ .Values.service.frontend.targetPort }}
+          initialDelaySeconds: {{ .Values.probes.frontend.startup.initialDelaySeconds }}
+          periodSeconds: {{ .Values.probes.frontend.startup.periodSeconds }}
+          timeoutSeconds: {{ .Values.probes.frontend.startup.timeoutSeconds }}
+          failureThreshold: {{ .Values.probes.frontend.startup.failureThreshold }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

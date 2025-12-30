@@ -1,0 +1,23 @@
+# Helm Chart for Evolved Todo Application
+# Task: T071 - Helm Chart metadata
+# Spec: specs/004-phase4-k8s-deployment/spec.md
+
+apiVersion: v2
+name: evolved-todo
+description: AI-powered todo management application with ChatKit UI and MCP tools
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - todo
+  - ai
+  - chatbot
+  - kubernetes
+  - chatkit
+  - mcp
+maintainers:
+  - name: Evolved Todo Team
+    email: team@evolved-todo.dev
+home: https://github.com/evolved-todo/evolved-todo
+sources:
+  - https://github.com/evolved-todo/evolved-todo

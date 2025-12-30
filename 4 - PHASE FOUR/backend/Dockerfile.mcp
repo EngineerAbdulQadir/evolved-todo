@@ -1,0 +1,29 @@
+# Dockerfile for Standalone MCP Server
+#
+# Build: docker build -f Dockerfile.mcp -t evolved-todo-mcp-server .
+# Run: docker run -p 8001:8001 --env-file .env evolved-todo-mcp-server
+
+FROM python:3.13-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install uv package manager
+RUN pip install uv
+
+# Copy project files
+COPY pyproject.toml .
+COPY app/ ./app/
+
+# Install dependencies
+RUN uv pip install --system -e .
+
+# Expose MCP HTTP port
+EXPOSE 8001
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')" || exit 1
+
+# Run standalone MCP server
+CMD ["python", "-m", "app.mcp.standalone"]

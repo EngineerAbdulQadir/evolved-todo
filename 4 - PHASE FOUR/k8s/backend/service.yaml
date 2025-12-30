@@ -1,0 +1,21 @@
+# [Task]: T043
+# [From]: specs/004-phase4-k8s-deployment/spec.md, AGENTS.md
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: evolved-todo-backend
+  labels:
+    app: evolved-todo
+    component: backend
+spec:
+  type: LoadBalancer  # External access for browser API calls
+  selector:
+    app: evolved-todo
+    component: backend
+  ports:
+  - name: http
+    port: 8000
+    targetPort: 8000
+    protocol: TCP
+  sessionAffinity: None  # Stateless - any pod can handle any request

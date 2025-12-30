@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  mcp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.mcp
+    container_name: evolved-todo-mcp-server
+    ports:
+      - "8001:8001"
+    environment:
+      # Transport configuration
+      MCP_TRANSPORT: http
+      MCP_HOST: 0.0.0.0
+      MCP_PORT: 8001
+
+      # Authentication (set your API keys)
+      MCP_API_KEYS: ${MCP_API_KEYS:-}
+
+      # Database (required - get from .env)
+      DATABASE_URL: ${DATABASE_URL}
+
+      # Logging
+      LOG_LEVEL: INFO
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+    # Optional: Connect to network if using with other services
+    # networks:
+    #   - evolved-todo-network
+
+# Optional: Define network
+# networks:
+#   evolved-todo-network:
+#     driver: bridge

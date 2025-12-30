@@ -1,0 +1,89 @@
+# Debug values - Very lenient health probes for troubleshooting
+# Extends values-dev.yaml
+
+# Lower replica counts for easier debugging
+replicaCount:
+  backend: 1
+  frontend: 3
+
+# Disable autoscaling
+autoscaling:
+  backend:
+    enabled: false
+  frontend:
+    enabled: false
+
+# Use LoadBalancer for minikube tunnel
+service:
+  backend:
+    type: LoadBalancer
+    port: 8000
+  frontend:
+    type: LoadBalancer
+    port: 80
+    targetPort: 3000
+
+# Use Never pull policy for local images
+image:
+  backend:
+    pullPolicy: Never
+  frontend:
+    pullPolicy: Never
+
+# Lower resource requests
+resources:
+  backend:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  frontend:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 150m
+      memory: 128Mi
+
+# VERY LENIENT health probes for debugging
+probes:
+  backend:
+    liveness:
+      path: /api/health
+      initialDelaySeconds: 60  # Wait 60 seconds before first check
+      periodSeconds: 30        # Check every 30 seconds
+      timeoutSeconds: 10       # 10 second timeout
+      failureThreshold: 5      # Allow 5 failures
+    readiness:
+      path: /api/health
+      initialDelaySeconds: 30  # Wait 30 seconds
+      periodSeconds: 10        # Check every 10 seconds
+      timeoutSeconds: 10       # 10 second timeout
+      failureThreshold: 5      # Allow 5 failures
+    startup:
+      path: /api/health
+      initialDelaySeconds: 10  # Wait 10 seconds
+      periodSeconds: 10        # Check every 10 seconds
+      timeoutSeconds: 10       # 10 second timeout
+      failureThreshold: 30     # Allow 30 failures = 300 seconds total
+  frontend:
+    liveness:
+      path: /api/health
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+    readiness:
+      path: /api/health
+      initialDelaySeconds: 10
+      periodSeconds: 5
+      timeoutSeconds: 3
+      failureThreshold: 3
+    startup:
+      path: /api/health
+      initialDelaySeconds: 0
+      periodSeconds: 5
+      timeoutSeconds: 3
+      failureThreshold: 12

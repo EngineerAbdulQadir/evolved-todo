@@ -1,0 +1,20 @@
+# Backend Service Template
+# Task: T076 - Backend Service with parameterized values
+# Spec: specs/004-phase4-k8s-deployment/spec.md
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "evolved-todo.fullname" . }}-backend
+  labels:
+    {{- include "evolved-todo.backend.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.backend.type }}
+  ports:
+  - port: {{ .Values.service.backend.port }}
+    targetPort: {{ .Values.service.backend.port }}
+    protocol: TCP
+    name: http
+  selector:
+    {{- include "evolved-todo.backend.selectorLabels" . | nindent 4 }}
+  sessionAffinity: None
