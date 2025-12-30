@@ -217,9 +217,9 @@ Quick Start Guide - Next Session
     -f ./helm/evolved-todo/values-debug.yaml \
     --set backend.image.tag=1.0.1 \
     --set frontend.image.tag=1.0.3 \
-    --set secrets.DATABASE_URL='postgresql+asyncpg://neondb_owner:npg_piYDtzkE2vH5@ep-solitary-shape-a1uj62mx.ap-southeast-1.aws.neon.tech/neondb?ssl=require' \
-    --set secrets.OPENAI_API_KEY='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' \
-    --set secrets.BETTER_AUTH_SECRET='OP_aCndvbZrj2G0xQN3syhnAhfOH6zHcnV2glEqheWcg3Fk6spxK9cnHknBWo3wU'
+    --set secrets.DATABASE_URL='' \
+    --set secrets.OPENAI_API_KEY='' \
+    --set secrets.BETTER_AUTH_SECRET=''
 
   # 4. Wait for pods to be ready (2-3 minutes)
   kubectl get pods -w
@@ -237,9 +237,9 @@ Quick Start Guide - Next Session
     -f ./helm/evolved-todo/values-debug.yaml \
     --set backend.image.tag=1.0.1 \
     --set frontend.image.tag=1.0.3 \
-    --set secrets.DATABASE_URL='postgresql+asyncpg://neondb_owner:npg_piYDtzkE2vH5@ep-solitary-shape-a1uj62mx.ap-southeast-1.aws.neon.tech/neondb?ssl=require' \
-    --set secrets.OPENAI_API_KEY='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' \
-    --set secrets.BETTER_AUTH_SECRET='OP_aCndvbZrj2G0xQN3syhnAhfOH6zHcnV2glEqheWcg3Fk6spxK9cnHknBWo3wU'
+    --set secrets.DATABASE_URL='' \
+    --set secrets.OPENAI_API_KEY='' \
+    --set secrets.BETTER_AUTH_SECRET=''
 
   Useful Commands:
   kubectl get pods              # Check pod status
